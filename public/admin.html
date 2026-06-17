@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dense Origins — Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f4f0;
+      color: #1a1c18;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #e0ddd6;
+      padding: 2.5rem;
+      max-width: 480px;
+      width: 100%;
+    }
+    .logo {
+      font-size: .65rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #83927d;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: .4rem;
+    }
+    .subtitle {
+      font-size: .85rem;
+      color: #6b7062;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #e0ddd6;
+      margin-bottom: 2rem;
+    }
+    .action-label {
+      font-size: .65rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #83927d;
+      margin-bottom: .75rem;
+    }
+    .action-desc {
+      font-size: .82rem;
+      color: #6b7062;
+      margin-bottom: 1.25rem;
+      line-height: 1.6;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .75rem 1.75rem;
+      font-size: .8rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      border-radius: 2px;
+      transition: opacity .2s, background .2s;
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    #publish-btn { background: #2d3328; color: #fff; }
+    #publish-btn:hover:not(:disabled) { background: #3f4839; }
+    #publish-btn.success { background: #4a6741; }
+    #publish-btn.error { background: #c0392b; }
+    .status {
+      font-size: .78rem;
+      margin-top: .75rem;
+      min-height: 1.2em;
+      color: #6b7062;
+    }
+    .status.ok { color: #4a6741; }
+    .status.err { color: #c0392b; }
+    .footer-note {
+      margin-top: 2.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #e0ddd6;
+      font-size: .75rem;
+      color: #9a9b94;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <p class="logo">Dense Origins &mdash; Internal Admin</p>
+    <h1>Content Management</h1>
+    <p class="subtitle">
+      Use this page to publish edits made in the
+      <a href="https://drive.google.com/drive/folders/1sGXsklmWQXFDPQOqL9Depo6ilVqwUlRi" target="_blank" rel="noopener" style="color:#83927d;">Google Sheets CMS</a>
+      to the live site.
+    </p>
+    <hr class="divider" />
+
+    <p class="action-label">Publish Changes</p>
+    <p class="action-desc">
+      After editing any product sheet, click below to clear the site cache and
+      make your changes live. The site will re-fetch all content on the next visitor request.
+    </p>
+
+    <button id="publish-btn">&#8635; Publish content changes</button>
+    <p class="status" id="status-msg"></p>
+
+    <p class="footer-note">
+      This page is for internal use only &mdash; do not share the URL publicly.<br />
+      Changes to the sheets take effect immediately after publishing.
+    </p>
+  </div>
+
+  <script>
+    const SECRET = '09gcyNSJD23dsfisd0f909f39f09f09fJJKVGVILCBt281730edVGAJVGGQWDasjhdaskdSAD';
+
+    document.getElementById('publish-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('publish-btn');
+      const msg = document.getElementById('status-msg');
+
+      btn.disabled = true;
+      btn.className = '';
+      btn.textContent = 'Publishing…';
+      msg.textContent = '';
+      msg.className = 'status';
+
+      try {
+        const res = await fetch('/api/revalidate', {
+          method: 'POST',
+          headers: { 'x-revalidate-secret': SECRET },
+        });
+
+        if (res.ok) {
+          btn.textContent = 'Published ✓';
+          btn.className = 'success';
+          msg.textContent = 'Cache cleared. Changes will appear on the next page visit.';
+          msg.className = 'status ok';
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (err) {
+        btn.textContent = 'Failed — try again';
+        btn.className = 'error';
+        msg.textContent = 'Could not reach the server. Check your connection and try again.';
+        msg.className = 'status err';
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.className = '';
+          btn.textContent = '↺ Publish content changes';
+          if (msg.className === 'status ok') {
+            msg.textContent = '';
+            msg.className = 'status';
+          }
+        }, 4000);
+      }
+    });
+  </script>
+</body>
+</html>
